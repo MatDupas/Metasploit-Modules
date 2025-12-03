@@ -11,7 +11,7 @@ The exploit uses Metasploit's `HttpServer` mixin to handle requests for any `.xs
 
 - **CVSS Score**: 9.8 Critical
 - **Affected Versions**: Oracle E-Business Suite, versions 12.2.3-12.2.14
-- **Tested On**: [Fully tested on Oracle EBS 12.2.12 on Linux]
+- **Tested On**: Oracle EBS 12.2.12 on Linux
 
 **Note**: This is a **proof-of-concept** module for educational/red teaming purposes. Use responsibly and only on authorized systems.
 
@@ -34,9 +34,11 @@ TBD
 cp oracle_ebs_cve_2025_61882_rce.rb ~/.msf4/modules/exploits/multi/http/
 ```
 **2.Start MSF**
-``\msfconsole```
+
+```msfconsole```
 
 **3. Load the module**
+
 ```use exploit/multi/http/oracle_ebs_cve_2025_61882_rce```
 
 **4. Configure the required parameters**
