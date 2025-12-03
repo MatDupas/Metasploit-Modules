@@ -32,12 +32,12 @@ TBD
 
 ```
 cp oracle_ebs_cve_2025_61882_rce.rb ~/.msf4/modules/exploits/multi/http/
-````
+```
 **2.Start MSF**
-msfconsole
+``\msfconsole```
 
 **3. Load the module**
-use exploit/multi/http/oracle_ebs_cve_2025_61882_rce
+```use exploit/multi/http/oracle_ebs_cve_2025_61882_rce```
 
 **4. Configure the required parameters**
 TBD
