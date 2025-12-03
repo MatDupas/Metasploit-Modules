@@ -1,11 +1,11 @@
 # Metasploit-Modules
 
 # Oracle E-Business Suite CVE-2025-61882 RCE
-# HTTP Request Smuggling + XSLT Injection → Remote Command Execution #
+## SSRF + HTTP Request Smuggling + XSLT Injection → Remote Command Execution 
 
 ## Description
 
-This module exploits **CVE-2025-61882**, a critical Remote Code Execution (RCE) vulnerability in **Oracle E-Business Suite (EBS)**. The flaw allows unauthenticated attackers to execute arbitrary code by leveraging a combination of HTTP request smuggling and XSLT injection.
+This module exploits **CVE-2025-61882**, a critical Remote Code Execution (RCE) vulnerability in **Oracle E-Business Suite (EBS)**. The flaw allows unauthenticated attackers to execute arbitrary code by leveraging a combination of SSRF, HTTP request smuggling and XSLT injection.
 
 The exploit uses Metasploit's `HttpServer` mixin to handle requests for any `.xsl` endpoint. When the target fetches the stylesheet (via XML processing in EBS), it triggers the payload.
 
@@ -35,11 +35,15 @@ cp oracle_ebs_cve_2025_61882_rce.rb ~/.msf4/modules/exploits/multi/http/
 ```
 **2.Start MSF**
 
-```msfconsole```
+```
+msfconsole
+```
 
 **3. Load the module**
 
-```use exploit/multi/http/oracle_ebs_cve_2025_61882_rce```
+```
+use exploit/multi/http/oracle_ebs_cve_2025_61882_rce
+```
 
 **4. Configure the required parameters**
 TBD
