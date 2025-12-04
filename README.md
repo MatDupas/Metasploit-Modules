@@ -24,7 +24,8 @@ The exploit uses Metasploit's `HttpServer` mixin to handle requests for any `.xs
 - Built entirely using native Metasploit Ruby APIs
 
 ## Screenshots
-TBD
+<img width="1095" height="452" alt="session-oracle-ebs" src="https://github.com/user-attachments/assets/eb98e150-f599-47fb-ac51-8031bfeefcd6" />
+
 
 ## 🚀 Installation & Usage (Metasploit)
 
@@ -46,7 +47,8 @@ use exploit/multi/http/oracle_ebs_cve_2025_61882_rce
 ```
 
 **4. Configure the required parameters**
-TBD
+<img width="899" height="573" alt="options-oracle-EBS-metasploit-module" src="https://github.com/user-attachments/assets/22aea551-1f83-44ba-8ea1-153550fd6d48" />
+
 
 ## Detection & Mitigation
 - Patch Oracle EBS per [Oracle Security Alert](https://www.oracle.com/security-alerts/).
