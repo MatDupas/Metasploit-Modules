@@ -50,6 +50,12 @@ use exploit/multi/http/oracle_ebs_cve_2025_61882_rce
 <img width="899" height="573" alt="options-oracle-EBS-metasploit-module" src="https://github.com/user-attachments/assets/22aea551-1f83-44ba-8ea1-153550fd6d48" />
 
 
+## Tips for Oracle EBS Sandbox setup
+
+App images files are available on Oracle website (Oracle Software Delivery Cloud)
+You can follow this [setup guide for Oracle EBS] (https://blog.rishoradev.com/2021/04/12/oracle-ebs-r12-on-virtualbox)
+**Note**: 300 Go (!)  will be needed and a few hours for the inital image creation
+
 ## Detection & Mitigation
 - Patch Oracle EBS per [Oracle Security Alert](https://www.oracle.com/security-alerts/).
 - WAF rules: Block suspicious XSL fetches.
