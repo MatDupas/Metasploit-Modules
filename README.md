@@ -52,8 +52,9 @@ use exploit/multi/http/oracle_ebs_cve_2025_61882_rce
 
 ## Tips for Oracle EBS Sandbox setup
 
-App images files are available on Oracle website (Oracle Software Delivery Cloud)
-You can follow this [setup guide for Oracle EBS] (https://blog.rishoradev.com/2021/04/12/oracle-ebs-r12-on-virtualbox)
+- App images files are available on Oracle website (Oracle Software Delivery Cloud)
+- You can follow this [setup guide for Oracle EBS](https://blog.rishoradev.com/2021/04/12/oracle-ebs-r12-on-virtualbox)
+
 **Note**: 300 Go (!)  will be needed and a few hours for the inital image creation
 
 ## Detection & Mitigation
