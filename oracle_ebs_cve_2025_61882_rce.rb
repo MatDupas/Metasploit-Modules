@@ -16,9 +16,9 @@ class MetasploitModule < Msf::Exploit::Remote
         'Name' => 'Oracle E-Business Suite CVE-2025-61882 RCE',
         'Description' => %q{
           This module exploits CVE-2025-61882 in Oracle E-Business Suite
-          through HTTP request smuggling combined with XSLT injection.
+          through chaining of SSRF, Path traversal,HTTP request smuggling and XSLT injection.
 
-          The exploit requires the attacker to host a malicious XSL file
+          The exploit hosts a malicious XSL file
           that the target will fetch and process, leading to RCE.
 
           This module provides a full interactive shell session.
