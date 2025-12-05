@@ -241,7 +241,7 @@ class MetasploitModule < Msf::Exploit::Remote
 
         shell_waited = 0
         while shell_waited < shell_timeout
-          # VÃ©rifier si une session a Ã©tÃ© crÃ©Ã©e
+          # check session
           if framework.sessions.length > 0
             print_good("Session created successfully!")
             @session_created = true
@@ -262,7 +262,7 @@ class MetasploitModule < Msf::Exploit::Remote
       sleep(1)
       waited += 1
 
-      # Activity feedbackn point tous les 5 secondes pour montrer l'activitÃ©
+      # Activity feedback every 5s
       if waited % 5 == 0
         vprint_status("Waiting for XSL request... (#{waited}/#{timeout}s)")
       end
