@@ -137,7 +137,7 @@ class MetasploitModule < Msf::Exploit::Remote
 
     # Adapt the command to the platform
     case target['Platform']
-    when 'win', ['win']
+    when 'win'
       base_cmd = ['cmd.exe', '/c']
     else
       base_cmd = ['bash', '-c']
