@@ -26,6 +26,10 @@ The exploit uses Metasploit's `HttpServer` mixin to handle requests for any `.xs
 ## Screenshots
 <img width="1095" height="452" alt="session-oracle-ebs" src="https://github.com/user-attachments/assets/eb98e150-f599-47fb-ac51-8031bfeefcd6" />
 
+With Meterpreter payload:
+<img width="1222" height="511" alt="Screenshot from 2026-01-17 13-31-56" src="https://github.com/user-attachments/assets/b47c3721-fe5e-403b-a2ac-11edc2f92366" />
+<img width="638" height="116" alt="Screenshot from 2026-01-17 13-31-36" src="https://github.com/user-attachments/assets/d80bb400-2783-4d0a-ac89-fd55d2e67a30" />
+
 
 ## 🚀 Installation & Usage (Metasploit)
 
