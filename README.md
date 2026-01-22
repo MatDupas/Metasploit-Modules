@@ -3,6 +3,9 @@
 # Oracle E-Business Suite CVE-2025-61882 RCE
 ## SSRF + HTTP Request Smuggling + XSLT Injection → Remote Command Execution 
 
+# IMPORTANT: As of Jan 22nd 2026, this module is now part of the official metasploit modules. You can update your metasploit version to get the latest modules.
+[Link to the official module version](https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/multi/http/oracle_ebs_cve_2025_61882_exploit_rce.rb)
+
 ## Description
 
 This module exploits **CVE-2025-61882**, a critical Remote Code Execution (RCE) vulnerability in **Oracle E-Business Suite (EBS)**. The flaw allows unauthenticated attackers to execute arbitrary code by leveraging a combination of SSRF, HTTP request smuggling and XSLT injection.
